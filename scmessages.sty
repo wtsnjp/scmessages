@@ -1,0 +1,132 @@
+%%
+%% This is file `scmessages.sty'.
+%%
+%% Copyright (c) 2018 Takuto ASAKURA (wtsnjp)
+%%   GitHub:   https://github.com/wtsnjp
+%%   Twitter:  @wtsnjp
+%%
+%% This package is distributed under the MIT License.
+%%
+
+% -------------------------------------------------- declarations
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {scmessages} {2018/08/08} {0.1.0}
+  {Make LaTeX2e messages cute}
+
+% -------------------------------------------------- utilities
+
+\cs_new_eq:NN \scms_unsafe_command:c \use:c
+\cs_generate_variant:Nn \str_replace_all:Nnn { Nnx }
+\cs_generate_variant:Nn \str_replace_once:Nnn { NnV }
+
+\cs_new:Npn \__scms_str_const:Nn #1 {
+  \group_begin:
+    \char_set_catcode_other:N \#
+    \char_set_catcode_other:N \~
+    \char_set_catcode_other:N \_
+    \__scms_str_const_helper:Nn #1
+}
+\cs_new:Npn \__scms_str_const_helper:Nn #1#2 {
+    \str_set:Nn \l_tmpa_str { #2 }
+    \str_replace_all:Nnx \l_tmpa_str { = } { \space }
+    \str_const:Nx #1 { \str_use:N \l_tmpa_str }
+  \group_end:
+}
+
+% -------------------------------------------------- variables
+
+\__scms_str_const:Nn \c_scms_error_str {^^J
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!^^J
+  !========____^^J
+  !=====___HHHH===_____=={name}=ERROR!^^J
+  !====/=.===.=\=|Oops!|====Something=is=wrong!^^J
+  !====\==---==/=|~~~~~^^J
+  !==V=:#######:=Y^^J
+  !===\/===o*"*\/^^J
+  !==={====o====}^^J
+  !====\_______/==========================Cheers!!
+}
+
+\__scms_str_const:Nn \c_scms_warning_str {^^J
+  *************************************************^^J
+  *========____^^J
+  *=====___HHHH===_____=={name}=WARNING!^^J
+  *====/=.===.=\=|Hey!|=====Something=is=wierd!^^J
+  *====\==---==/=|~~~~~^^J
+  *==V=:#######:=Y^^J
+  *===\/===o*"*\/^^J
+  *==={====o====}^^J
+  *====\_______/========================Good=Luck!!
+}
+
+% -------------------------------------------------- message commands
+
+\cs_new:Npn \__scms_add_indent:Nn #1#2 {
+  \int_zero:N \l_tmpa_int
+  \int_while_do:nNnn { \l_tmpa_int } < { #2 }
+    {
+      \int_incr:N \l_tmpa_int
+      \str_put_left:Nn #1 { ~ }
+    }
+}
+
+\cs_new_protected:Npn \scms_generic_warning:nn #1#2 {
+  \group_begin:
+    \cs_set:Npn \MessageBreak { \\ }
+    \scms_unsafe_command:c { set@display@protect }
+    \str_set_eq:NN \l_tmpa_str \c_scms_warning_str
+    \str_set:Nn \l_tmpb_str { #1 }
+    \__scms_add_indent:Nn \l_tmpb_str { ( 18 - \str_count:N \l_tmpb_str ) / 2  }
+    \str_replace_once:NnV \l_tmpa_str { {name} } \l_tmpb_str
+    \iow_term:x { \str_use:N \l_tmpa_str }
+    \msg_term:n { #2~\msg_line_context: . }
+  \group_end:
+}
+
+\cs_new_protected:Npn \scms_generic_error:nnnn #1#2#3#4 {
+  \group_begin:
+    \cs_set:Npn \MessageBreak { \\ }
+    \scms_unsafe_command:c { set@display@protect }
+    \str_set_eq:NN \l_tmpa_str \c_scms_error_str
+    \str_set:Nn \l_tmpb_str { #1 }
+    \__scms_add_indent:Nn \l_tmpb_str { ( 20 - \str_count:N \l_tmpb_str ) / 2  }
+    \str_replace_once:NnV \l_tmpa_str { {name} } \l_tmpb_str
+    \iow_term:x { \str_use:N \l_tmpa_str }
+    \msg_interrupt:nnn { #2 } { #3 } { #4 }
+  \group_end:
+}
+
+% -------------------------------------------------- overwrite LaTeX2e kernel
+
+% error
+\cs_set:cpn { @latex@error } #1#2 {
+  \scms_generic_error:nnnn { LaTeX } { #1 } {
+    See~the~LaTeX~manual~or~LaTeX~Companion~for~explanation.
+  } { #2 }
+}
+\cs_set:Npn \ClassError #1#2#3 {
+  \scms_generic_error:nnnn { Class~#1 } { #2 } {
+    See~the~#1~class~documentation~for~explanation.
+  } { #3 }
+}
+\cs_set:Npn \PackageError #1#2#3 {
+  \scms_generic_error:nnnn { Package~#1 } { #2 } {
+    See~the~#1~package~documentation~for~explanation.
+  } { #3 }
+}
+
+% warning
+\cs_set:cpn { @latex@warning } #1 {
+  \scms_generic_warning:nn { LaTeX } { #1 }
+}
+\cs_set:Npn \ClassWarning #1#2 {
+  \scms_generic_warning:nn { Class~#1 } { #2 }
+}
+\cs_set:Npn \PackageWarning #1#2 {
+  \scms_generic_warning:nn { Package~#1 } { #2 }
+}
+
+% vim: ft=expl3 nospell:
+%% EOF
